@@ -1,0 +1,11 @@
+{
+  "name": "mern_e-commerce_v2",
+  "version": "1.0.0",
+  "description": "E-Commerce App using MERN Stack",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Kuvaiev Mykyta",
+  "license": "MIT"
+}
