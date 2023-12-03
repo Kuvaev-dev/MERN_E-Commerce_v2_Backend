@@ -4,7 +4,9 @@
   "description": "E-Commerce App using MERN Stack",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js",
+    "server": "nodemon index.js"
   },
   "author": "Kuvaiev Mykyta",
   "license": "MIT",
@@ -14,5 +16,8 @@
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "mongoose": "^8.0.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
   }
 }
