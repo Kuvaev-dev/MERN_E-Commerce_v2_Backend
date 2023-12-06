@@ -1,6 +1,7 @@
 const { generateToken } = require('../config/jwtToken');
 const User = require('../models/userModel');
 const asyncHandler = require('express-async-handler');
+const { validateMongoDBid } = require('../utils/validateMongoDBid');
 
 const createUser = asyncHandler(async (req, res) => {
     const email = req.body.email;
@@ -34,9 +35,10 @@ const loginUser = asyncHandler(async (req, res) => {
 
 // Update a User
 const updateUser = asyncHandler(async (req, res) => {
-    const { id } = req.params;
+    const { _id } = req.user;
+    validateMongoDBid(_id);
     try {
-        const updatedUser = await User.findByIdAndUpdate(id, {
+        const updatedUser = await User.findByIdAndUpdate(_id, {
             firstname: req?.body?.firstname,
             lastname: req?.body?.lastname,
             email: req?.body?.email,
@@ -63,6 +65,7 @@ const getAllUsers = asyncHandler(async (req, res) => {
 // Get a Single User
 const getSingleUser = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    validateMongoDBid(id);
     try {
         const getUser = await User.findById(id);
         res.json({
@@ -76,10 +79,45 @@ const getSingleUser = asyncHandler(async (req, res) => {
 // Get a Single User
 const deleteUser = asyncHandler(async (req, res) => {
     const { id } = req.params;
+    validateMongoDBid(id);
     try {
         const deletedUser = await User.findByIdAndDelete(id);
         res.json({
             deletedUser
+        });
+    } catch (error) {
+        throw new Error(error);
+    }
+});
+
+const blockUser = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    validateMongoDBid(id);
+    try {
+        const block = await User.findByIdAndUpdate(id, {
+            isBlocked:true,
+        }, {
+            new:true,
+        });
+        res.json({
+            message:'User is Blocked',
+        });
+    } catch (error) {
+        throw new Error(error);
+    }
+});
+
+const unblockUser = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    validateMongoDBid(id);
+    try {
+        const unblock = await User.findByIdAndUpdate(id, {
+            isBlocked:false,
+        }, {
+            new:true,
+        });
+        res.json({
+            message:'User is Unblocked',
         });
     } catch (error) {
         throw new Error(error);
@@ -92,5 +130,7 @@ module.exports = {
     getAllUsers,
     getSingleUser,
     deleteUser,
-    updateUser
+    updateUser,
+    blockUser,
+    unblockUser
 };
