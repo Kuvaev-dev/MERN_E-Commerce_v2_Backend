@@ -2,6 +2,7 @@ const { generateToken } = require('../config/jwtToken');
 const User = require('../models/userModel');
 const asyncHandler = require('express-async-handler');
 const { validateMongoDBid } = require('../utils/validateMongoDBid');
+const { generateRefreshToken } = require('../config/refreshToken');
 
 const createUser = asyncHandler(async (req, res) => {
     const email = req.body.email;
@@ -20,6 +21,16 @@ const loginUser = asyncHandler(async (req, res) => {
     // Check if User Exists or Not
     const findUser = await User.findOne({ email });
     if (findUser && await findUser.isPasswordMatched(password)) {
+        const refreshToken = await generateRefreshToken(findUser?._id);
+        const updateUser = await User.findByIdAndUpdate(findUser?.id, {
+            refreshToken: refreshToken,
+        }, { 
+            new: true, 
+        });
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            maxAge: 12 * 60 * 60 * 1000,
+        });
         res.json({
             _id: findUser?._id,
             firstname: findUser?.firstname,
@@ -69,7 +80,7 @@ const getSingleUser = asyncHandler(async (req, res) => {
     try {
         const getUser = await User.findById(id);
         res.json({
-            getUser
+            getUser,
         });
     } catch (error) {
         throw new Error(error);
@@ -83,7 +94,7 @@ const deleteUser = asyncHandler(async (req, res) => {
     try {
         const deletedUser = await User.findByIdAndDelete(id);
         res.json({
-            deletedUser
+            deletedUser,
         });
     } catch (error) {
         throw new Error(error);
