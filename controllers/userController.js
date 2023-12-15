@@ -3,6 +3,7 @@ const User = require('../models/userModel');
 const asyncHandler = require('express-async-handler');
 const { validateMongoDBid } = require('../utils/validateMongoDBid');
 const { generateRefreshToken } = require('../config/refreshToken');
+const jwt = require('jsonwebtoken');
 
 const createUser = asyncHandler(async (req, res) => {
     const email = req.body.email;
@@ -42,6 +43,45 @@ const loginUser = asyncHandler(async (req, res) => {
     } else {
         throw new Error('Invalid Credentials');
     }
+});
+
+// Handle Refresh Token
+const handleRefreshToken = asyncHandler(async (req, res) => {
+    const cookie = req.cookies;
+    if (!cookie?.refreshToken) throw new Error('No Refresh Token in Cookies');
+    const refreshToken = cookie.refreshToken;
+    const user = await User.findOne({ refreshToken });
+    if (!user) throw new Error('No Refresh Token in DB or Not Matched');
+    jwt.verify(refreshToken, process.env.JWT_SECRET, (err, decoded) => {
+        if (err || user.id !== decoded.id) {
+            throw new Error('There`s Something Wrong with Refresh Token');
+        }
+        const accessToken = generateToken(user?._id);
+        res.json({ accessToken });
+    });
+});
+
+// Logout
+const logout = asyncHandler(async (req, res) => {
+    const cookie = req.cookies;
+    if (!cookie?.refreshToken) throw new Error('No Refresh Token in Cookies');
+    const refreshToken = cookie.refreshToken;
+    const user = await User.findOne({ refreshToken });
+    if (!user) {
+        res.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: true,
+        });
+        return res.sendStatus(204); // Forbidden
+    }
+    await User.findOneAndUpdate({ refreshToken: refreshToken }, {
+        refreshToken: "",
+    });
+    res.clearCookie('refreshToken', {
+        httpOnly: true,
+        secure: true,
+    });
+    return res.sendStatus(204); // Forbidden
 });
 
 // Update a User
@@ -143,5 +183,7 @@ module.exports = {
     deleteUser,
     updateUser,
     blockUser,
-    unblockUser
+    unblockUser,
+    handleRefreshToken,
+    logout
 };
