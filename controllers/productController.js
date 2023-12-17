@@ -20,15 +20,9 @@ const updateProduct = asyncHandler(async (req, res) => {
     if (req.body.title) {
       req.body.slug = slugify(req.body.title);
     }
-    const updateProduct = await Product.findOneAndUpdate(
-      {
-        _id: id,
-      },
-      req.body,
-      {
-        new: true,
-      }
-    );
+    const updateProduct = await Product.findOneAndUpdate(id, req.body, {
+      new: true,
+    });
     res.json(updateProduct);
   } catch (error) {
     throw new Error(error);
