@@ -1,5 +1,7 @@
 const { generateToken } = require("../config/jwtToken");
 const User = require("../models/userModel");
+const Cart = require("../models/cartModel");
+const Product = require("../models/productModel");
 const asyncHandler = require("express-async-handler");
 const { validateMongoDBid } = require("../utils/validateMongoDBid");
 const { generateRefreshToken } = require("../config/refreshToken");
@@ -45,6 +47,38 @@ const loginUser = asyncHandler(async (req, res) => {
       email: findUser?.email,
       mobile: findUser?.mobile,
       token: generateToken(findUser?._id),
+    });
+  } else {
+    throw new Error("Invalid Credentials");
+  }
+});
+
+// Admin Login
+const loginAdmin = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+  // Check if User Exists or Not
+  const findAdmin = await User.findOne({ email });
+  if (findAdmin.role !== "admin") throw new Error("Not Authorized");
+  if (findAdmin && (await findAdmin.isPasswordMatched(password))) {
+    const refreshToken = await generateRefreshToken(findAdmin?._id);
+    const updateuser = await User.findByIdAndUpdate(
+      findAdmin.id,
+      {
+        refreshToken: refreshToken,
+      },
+      { new: true }
+    );
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      maxAge: 72 * 60 * 60 * 1000,
+    });
+    res.json({
+      _id: findAdmin?._id,
+      firstname: findAdmin?.firstname,
+      lastname: findAdmin?.lastname,
+      email: findAdmin?.email,
+      mobile: findAdmin?.mobile,
+      token: generateToken(findAdmin?._id),
     });
   } else {
     throw new Error("Invalid Credentials");
@@ -111,6 +145,27 @@ const updateUser = asyncHandler(async (req, res) => {
       }
     );
     res.json(updateUser);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+// Save User Address
+const saveAddress = asyncHandler(async (req, res, next) => {
+  const { _id } = req.user;
+  validateMongoDBid(_id);
+
+  try {
+    const updatedUser = await User.findByIdAndUpdate(
+      _id,
+      {
+        address: req?.body?.address,
+      },
+      {
+        new: true,
+      }
+    );
+    res.json(updatedUser);
   } catch (error) {
     throw new Error(error);
   }
@@ -247,9 +302,69 @@ const resetPassword = asyncHandler(async (req, res) => {
   res.json(user);
 });
 
+const getWishlist = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  try {
+    const findUser = await User.findById(_id).populate("wishlist");
+    res.json(findUser);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const userCart = asyncHandler(async (req, res) => {
+  const { cart } = req.body;
+  const { _id } = req.user;
+  validateMongoDBid(_id);
+  try {
+    let products = [];
+    const user = await User.findById(_id);
+    // Check if User Already Have Product in Cart
+    const alreadyExistCart = await Cart.findOne({ orderby: user._id });
+    if (alreadyExistCart) {
+      alreadyExistCart.remove();
+    }
+    for (let i = 0; i < cart.length; i++) {
+      let object = {};
+      object.product = cart[i]._id;
+      object.count = cart[i].count;
+      object.color = cart[i].color;
+      let getPrice = await Product.findById(cart[i]._id).select("price").exec();
+      object.price = getPrice.price;
+      products.push(object);
+    }
+    let cartTotal = 0;
+    for (let i = 0; i < products.length; i++) {
+      cartTotal = cartTotal + products[i].price * products[i].count;
+    }
+    let newCart = await new Cart({
+      products,
+      cartTotal,
+      orderby: user?._id,
+    }).save();
+    res.json(newCart);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const getUserCart = asyncHandler(async (req, res) => {
+  const { _id } = req.user;
+  validateMongoDBid(_id);
+  try {
+    const cart = await Cart.findOne({ orderby: _id }).populate(
+      "products.product"
+    );
+    res.json(cart);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
 module.exports = {
   createUser,
   loginUser,
+  loginAdmin,
   getAllUsers,
   getSingleUser,
   deleteUser,
@@ -261,4 +376,8 @@ module.exports = {
   updatePassword,
   forgotPasswordToken,
   resetPassword,
+  getWishlist,
+  saveAddress,
+  userCart,
+  getUserCart,
 };
