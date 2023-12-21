@@ -15,7 +15,7 @@ const { uploadPhoto, blogImageResize } = require("../middlewares/uploadImages");
 
 router.post("/", authMiddleware, isAdmin, createBlog);
 router.put(
-  "/upload/:id",
+  "/upload/",
   authMiddleware,
   isAdmin,
   uploadPhoto.array("images", 2),
