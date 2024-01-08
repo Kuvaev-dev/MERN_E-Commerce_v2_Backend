@@ -458,11 +458,11 @@ const getUserOrders = asyncHandler(async (req, res) => {
 
 const getAllOrders = asyncHandler(async (req, res) => {
   try {
-    const alluserorders = await Order.find()
+    const allUserOrders = await Order.find()
       .populate("products.product")
       .populate("orderby")
       .exec();
-    res.json(alluserorders);
+    res.json(allUserOrders);
   } catch (error) {
     throw new Error(error);
   }
@@ -472,11 +472,11 @@ const getOrderByUserId = asyncHandler(async (req, res) => {
   const { id } = req.params;
   validateMongoDBid(id);
   try {
-    const userorders = await Order.findOne({ orderby: id })
+    const userOrders = await Order.findOne({ orderby: id })
       .populate("products.product")
       .populate("orderby")
       .exec();
-    res.json(userorders);
+    res.json(userOrders);
   } catch (error) {
     throw new Error(error);
   }
