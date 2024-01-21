@@ -316,34 +316,16 @@ const getWishlist = asyncHandler(async (req, res) => {
 });
 
 const userCart = asyncHandler(async (req, res) => {
-  const { cart } = req.body;
+  const { productID, color, quantity, price } = req.body;
   const { _id } = req.user;
   validateMongoDBid(_id);
   try {
-    let products = [];
-    const user = await User.findById(_id);
-    // Check if User Already Have Product in Cart
-    const alreadyExistCart = await Cart.findOne({ orderby: user._id });
-    if (alreadyExistCart) {
-      alreadyExistCart.remove();
-    }
-    for (let i = 0; i < cart.length; i++) {
-      let object = {};
-      object.product = cart[i]._id;
-      object.count = cart[i].count;
-      object.color = cart[i].color;
-      let getPrice = await Product.findById(cart[i]._id).select("price").exec();
-      object.price = getPrice.price;
-      products.push(object);
-    }
-    let cartTotal = 0;
-    for (let i = 0; i < products.length; i++) {
-      cartTotal = cartTotal + products[i].price * products[i].count;
-    }
     let newCart = await new Cart({
-      products,
-      cartTotal,
-      orderby: user?._id,
+      userID: _id,
+      productID,
+      color,
+      quantity,
+      price,
     }).save();
     res.json(newCart);
   } catch (error) {
@@ -355,9 +337,9 @@ const getUserCart = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   validateMongoDBid(_id);
   try {
-    const cart = await Cart.findOne({ orderby: _id }).populate(
-      "products.product"
-    );
+    const cart = await Cart.find({ userID: _id })
+      .populate("productID")
+      .populate("color");
     res.json(cart);
   } catch (error) {
     throw new Error(error);
