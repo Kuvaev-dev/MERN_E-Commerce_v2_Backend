@@ -380,12 +380,12 @@ const updateProductQuantityFromCart = asyncHandler(async (req, res) => {
 
 const createOrder = asyncHandler(async (req, res) => {
   try {
-    const { user, products, shippingInfo, totalAmount, paymentInfo } = req.body;
+    const { user, products, shippingInfo, totalPrice, paymentInfo } = req.body;
     const newOrder = new Order({
       user,
       products,
       shippingInfo,
-      totalAmount,
+      totalPrice,
       paymentInfo,
     });
     const savedOrder = await newOrder.save();
@@ -399,14 +399,105 @@ const createOrder = asyncHandler(async (req, res) => {
 const getMyOrders = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   try {
-    const orders = await Order.find({ user: _id })
-      .populate("user")
-      .populate("orderItems.product")
-      .populate("orderItems.color");
+    const orders = await Order.find({ user: _id });
     res.json({ orders });
   } catch (error) {
     throw new Error(error);
   }
+});
+
+const getMonthWiseOrderIncome = asyncHandler(async (req, res) => {
+  let monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  let date = new Date();
+  let endDate = "";
+  date.setDate(1);
+  for (let index = 0; index < 11; index++) {
+    date.setMonth(date.getMonth() - 1);
+    endDate = monthNames[date.getMonth()] + " " + date.getFullYear();
+  }
+  const data = await Order.aggregate([
+    {
+      $match: {
+        createdAt: {
+          $lte: new Date(),
+          $gte: new Date(endDate),
+        },
+      },
+    },
+    {
+      $growup: {
+        _id: {
+          month: "$month",
+        },
+        amount: {
+          $sum: "$totalPriceAfterDiscount",
+        },
+        count: {
+          $sum: 1,
+        },
+      },
+    },
+  ]);
+  res.json(data);
+});
+
+const getYearlyTotalOrders = asyncHandler(async (req, res) => {
+  let monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  let date = new Date();
+  let endDate = "";
+  date.setDate(1);
+  for (let index = 0; index < 11; index++) {
+    date.setMonth(date.getMonth() - 1);
+    endDate = monthNames[date.getMonth()] + " " + date.getFullYear();
+  }
+  const data = await Order.aggregate([
+    {
+      $match: {
+        createdAt: {
+          $lte: new Date(),
+          $gte: new Date(endDate),
+        },
+      },
+    },
+    {
+      $growup: {
+        _id: null,
+        count: {
+          $sum: 1,
+        },
+        amount: {
+          $sum: "$totalPriceAfterDiscount",
+        },
+      },
+    },
+  ]);
+  res.json(data);
 });
 
 module.exports = {
@@ -432,4 +523,6 @@ module.exports = {
   updateProductQuantityFromCart,
   createOrder,
   getMyOrders,
+  getMonthWiseOrderIncome,
+  getYearlyTotalOrders,
 };

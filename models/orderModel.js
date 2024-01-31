@@ -56,14 +56,21 @@ const orderSchema = new mongoose.Schema({
       type: String,
     },
   },
-  status: {
+  orderStatus: {
     type: String,
-    enum: ["Pending", "Shipped", "Delivered"],
-    default: "Pending",
+    default: "Ordered",
   },
-  totalAmount: {
+  totalPrice: {
     type: Number,
     required: true,
+  },
+  totalPriceAfterDiscount: {
+    type: Number,
+    required: true,
+  },
+  month: {
+    type: String,
+    default: new Date().getMonth(),
   },
   paymentInfo: {
     paymentMethod: {
@@ -74,9 +81,9 @@ const orderSchema = new mongoose.Schema({
       type: String,
     },
   },
-  createdAt: {
+  paidAt: {
     type: Date,
-    default: Date.now,
+    default: Date.now(),
   },
 });
 
