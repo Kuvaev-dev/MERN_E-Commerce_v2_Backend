@@ -406,6 +406,16 @@ const getMyOrders = asyncHandler(async (req, res) => {
   }
 });
 
+const getAllOrders = asyncHandler(async (req, res) => {
+  try {
+    const orders = await Order.find()
+      .populate();
+    res.json({ orders });
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
 const getMonthWiseOrderIncome = asyncHandler(async (req, res) => {
   let monthNames = [
     "January",
@@ -525,4 +535,5 @@ module.exports = {
   getMyOrders,
   getMonthWiseOrderIncome,
   getYearlyTotalOrders,
+  getAllOrders,
 };
