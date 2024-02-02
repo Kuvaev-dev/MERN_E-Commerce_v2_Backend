@@ -25,6 +25,8 @@ const {
   getMonthWiseOrderIncome,
   getYearlyTotalOrders,
   getAllOrders,
+  getSingleOrder,
+  updateOrder,
 } = require("../controllers/userController");
 const { authMiddleware, isAdmin } = require("../middlewares/authMiddleware");
 const router = express.Router();
@@ -48,6 +50,8 @@ router.post("/cart/cash-order", authMiddleware, createOrder);
 router.get("/all-users", getAllUsers);
 router.get("/get-my-orders", authMiddleware, getMyOrders);
 router.get("/get-all-orders", authMiddleware, isAdmin, getAllOrders);
+router.get("/get-order/:id", authMiddleware, isAdmin, getSingleOrder);
+router.put("/update-order/:id", authMiddleware, isAdmin, updateOrder);
 router.get("/refresh", handleRefreshToken);
 router.get("/logout", logout);
 router.get("/wishlist", authMiddleware, getWishlist);
