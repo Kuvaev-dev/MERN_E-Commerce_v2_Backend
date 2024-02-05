@@ -27,6 +27,7 @@ const {
   getAllOrders,
   getSingleOrder,
   updateOrder,
+  emptyCart,
 } = require("../controllers/userController");
 const { authMiddleware, isAdmin } = require("../middlewares/authMiddleware");
 const router = express.Router();
@@ -67,7 +68,7 @@ router.delete(
   authMiddleware,
   updateProductQuantityFromCart
 );
-//router.delete("/empty-cart", authMiddleware, emptyCart);
+router.delete("/empty-cart", authMiddleware, emptyCart);
 router.delete("/:id", deleteUser);
 router.put("/edit-user", authMiddleware, updateUser);
 router.put("/save-address", authMiddleware, saveAddress);
